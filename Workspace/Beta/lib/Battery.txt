@@ -1,0 +1,5 @@
+battery
+standby
+talktime
+sot
+screen on time

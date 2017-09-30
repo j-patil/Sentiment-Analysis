@@ -1,0 +1,233 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Scanner;
+import java.util.StringTokenizer;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+
+import opennlp.tools.postag.POSModel;
+import opennlp.tools.postag.POSTaggerME;
+import opennlp.tools.tokenize.WhitespaceTokenizer;
+
+public class Seperate {
+	
+	public static class MapperPhase extends Mapper <Text,Text,Text,Text> {
+
+		  private Text OutputKey = new Text();
+		  private Text OutputValue = new Text();
+
+		  public void map(Text key, Text value, Context context) throws IOException,InterruptedException {
+		   Scanner sc;
+		   HashSet < String > Camera = new HashSet < String > ();
+		   sc = new Scanner(new File("/home/rutesh/workspace/Beta/lib/Camera.txt"));
+		   while (sc.hasNext()) {
+		    Camera.add(sc.next());
+		   }
+		   sc.close();
+
+		   HashSet < String > Display = new HashSet < String > ();
+		   sc = new Scanner(new File("/home/rutesh/workspace/Beta/lib/Display.txt"));
+		   while (sc.hasNext()) {
+		    Display.add(sc.next());
+		   }
+		   sc.close();
+
+		   HashSet < String > Processor = new HashSet < String > ();
+		   sc = new Scanner(new File("/home/rutesh/workspace/Beta/lib/Processor.txt"));
+		   while (sc.hasNext()) {
+		    Processor.add(sc.next());
+		   }
+		   sc.close();
+
+		   HashSet < String > Memory = new HashSet < String > ();
+		   sc = new Scanner(new File("/home/rutesh/workspace/Beta/lib/Memory.txt"));
+		   while (sc.hasNext()) {
+		    Memory.add(sc.next());
+		   }
+		   sc.close();
+
+		   HashSet < String > Sound = new HashSet < String > ();
+		   sc = new Scanner(new File("/home/rutesh/workspace/Beta/lib/Sound.txt"));
+		   while (sc.hasNext()) {
+		    Sound.add(sc.next());
+		   }
+		   sc.close();
+
+		   HashSet < String > Battery = new HashSet < String > ();
+		   sc = new Scanner(new File("/home/rutesh/workspace/Beta/lib/Battery.txt"));
+		   while (sc.hasNext()) {
+		    Battery.add(sc.next());
+		   }
+		   sc.close();
+		   
+		   Iterator <String> c = Camera.iterator();
+		   Iterator <String> d = Display.iterator();
+		   Iterator <String> p = Processor.iterator();
+		   Iterator <String> m = Memory.iterator();
+		   Iterator <String> s = Sound.iterator();
+		   Iterator <String> b = Battery.iterator();
+		   
+
+		   StringTokenizer big = new StringTokenizer(value.toString(),",");
+		   while(big.hasMoreTokens()){
+			String val = big.nextToken();
+			   StringTokenizer itr = new StringTokenizer(val);
+			   Boolean flag = false;
+
+		   	while (itr.hasMoreTokens()) {
+		    String test = itr.nextToken();
+		    
+		    while (c.hasNext()) {
+		     if (c.next().equals(test)) {
+		      flag = true;
+		      OutputKey.set(key+","+"Camera");
+		      OutputValue.set(val);
+		     }
+		    }
+		    c = Camera.iterator();
+		    if (flag)
+		     break;
+		    
+		    while (d.hasNext()) {
+		     if (d.next().equals(test)) {
+		      flag = true;
+		      OutputKey.set(key+","+"Display");
+		      OutputValue.set(val);
+		     }
+		    }
+		    d = Display.iterator();
+		    if (flag)
+		     break;
+
+		    while (p.hasNext()) {
+		     if (p.next().equals(test)) {
+		      flag = true;
+		      OutputKey.set(key+","+"Processor");
+		      OutputValue.set(val);
+		     }
+		    }
+		    p = Processor.iterator();
+		    if (flag)
+		     break;
+
+		    while (m.hasNext()) {
+		     if (m.next().equals(test)) {
+		      flag = true;
+		      OutputKey.set(key+","+"Memory");
+		      OutputValue.set(val);
+		     }
+		    }
+		    m = Memory.iterator();
+		    if (flag)
+		     break;
+
+		    while (s.hasNext()) {
+		     if (s.next().equals(test)) {
+		      flag = true;
+		      OutputKey.set(key+","+"Sound");
+		      OutputValue.set(val);
+		     }
+		    }
+		    s = Sound.iterator();
+		    if (flag)
+		        break;
+
+		       while (b.hasNext()) {
+		        if (b.next().equals(test)) {
+		         flag = true;
+		         OutputKey.set(key+","+"Battery");
+		         OutputValue.set(val);
+		        }
+		       }
+		       b = Battery.iterator();
+		       if (flag)
+		    	     break;
+		   }
+		   if (flag)
+		    context.write(OutputKey, OutputValue);
+		  }
+		 }
+	}
+		public static class ReducerPhase extends Reducer < Text, Text, Text, Text > {
+			 
+		  private Text result = new Text();
+		  public static String stringTag(String i) {
+		   String op = "";
+		   InputStream modelIn = null;
+		   POSModel model = null;
+		   try {
+		    modelIn = new FileInputStream("/home/rutesh/workspace/Beta/lib/en-pos-maxent.bin");
+		    model = new POSModel(modelIn);
+		   } catch (IOException e) {
+		    e.printStackTrace();
+		   } finally {
+		    if (modelIn != null) {
+		     try {
+		      modelIn.close();
+		     } catch (IOException e) {
+		    	 e.printStackTrace();
+		     }
+		    }
+		   }
+		   POSTaggerME tagger = new POSTaggerME(model);
+		   String[] sent = WhitespaceTokenizer.INSTANCE.tokenize(i);
+		   String[] tags = tagger.tag(sent);
+		   for (int j = 0; j < sent.length; j++) {
+		    op += tags[j] + "," + sent[j] + " ";
+		   }
+		   return op;
+		  }
+
+		  public void reduce(Text key, Iterable < Text > values, Context context) throws IOException,InterruptedException {
+		   
+		   String value, sentence, set = "";
+
+		   for (Text val: values) {
+		    value = val.toString();
+		    sentence = stringTag(value);
+		    set += sentence;
+		   }
+		   result.set(set);
+		   context.write(key,result);
+		  }
+		 }
+
+		public static void main(String[] args) {
+	    	try {
+	        Configuration conf = new Configuration();
+	        Job job = Job.getInstance(conf,"Task 2");
+	        job.setJarByClass(StopWordsRemover.class);
+	        job.setMapperClass(KeyMapper.class);
+	        job.setReducerClass(KeyReducer.class);
+	        job.setOutputKeyClass(Text.class);
+	        job.setOutputValueClass(Text.class);
+	        job.setInputFormatClass(KeyValueTextInputFormat.class);
+	        FileInputFormat.addInputPath(job, new Path(args[0]));
+	        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+	        System.exit(job.waitForCompletion(true) ? 0 : 1);
+	    	}
+	    	catch (IOException e) {
+	    		System.out.print(e);
+	    	}
+	    	catch (InterruptedException e) {
+	    		System.out.print(e);
+	    	}
+	    	catch (ClassNotFoundException e) {
+	    		System.out.print(e);
+	    	}
+	    	}
+		
+}

@@ -1,0 +1,91 @@
+package com.productsentiment;
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class MapReduceTwo {
+
+    public static class KeyMapper extends Mapper<Text, Text, Text, Text> {
+        private Text OutputKey = new Text();
+		private Text OutputValue = new Text();
+		
+		public void map(Text key, Text values, Context context) throws IOException, InterruptedException {
+			StringTokenizer itr = new StringTokenizer(values.toString());
+			//String [] b = new String[2];
+			while (itr.hasMoreTokens()) {
+			String temp = "";
+			String[] a = itr.nextToken().split(",");	
+			if (a[0].equals("JJ") || a[0].equals("JJR") || a[0].equals("JJS"))	{
+				
+				if (temp.equals("dont") || temp.equals("not"))
+				{
+					OutputKey.set(key+","+"P");
+					OutputValue.set(a[1]);
+					context.write(OutputKey, OutputValue);
+				} else {
+				OutputKey.set(key+","+"JJ");
+				OutputValue.set(a[1]);
+				context.write(OutputKey, OutputValue);
+				}
+			}
+			if (a[0].equals("RB") || a[0].equals("RBR") || a[0].equals("RBS"))	{
+				OutputKey.set(key+","+"RB");
+				OutputValue.set(a[1]);
+				context.write(OutputKey, OutputValue);
+			}
+			temp = a[1];
+			//a = b;
+			}
+		}
+    }
+    
+    public static class KeyReducer extends Reducer<Text,Text,Text,Text>
+    {
+        private Text result = new Text();
+        public void reduce(Text key, Iterable<Text> values,Context context) throws IOException, InterruptedException
+        {
+            String translations = "";
+            for (Text val : values)
+            translations += val.toString()+" ";
+            translations = translations.trim();
+            result.set(translations);
+            context.write(key, result);
+        }
+    }
+
+    public static void main(String[] args) {
+    	try {
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "SpcKeys");
+        job.setJarByClass(MapReduceTwo.class);
+        job.setMapperClass(KeyMapper.class);
+        job.setReducerClass(KeyReducer.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+        job.setInputFormatClass(KeyValueTextInputFormat.class);
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    	}
+    	catch (IOException e) {
+    		System.out.print(e);
+    	}
+    	catch (InterruptedException e) {
+    		System.out.print(e);
+    	}
+    	catch (ClassNotFoundException e) {
+    		System.out.print(e);
+    	}
+    	}
+
+}

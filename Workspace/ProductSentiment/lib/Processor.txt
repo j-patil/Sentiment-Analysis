@@ -1,0 +1,5 @@
+processor
+os
+gpu
+cpu
+chipset

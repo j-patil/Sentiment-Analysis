@@ -1,0 +1,64 @@
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JScrollPane;
+import java.awt.BorderLayout;
+import javax.swing.JTextPane;
+import java.awt.Color;
+
+public class ControlPanal {
+
+	private JFrame frmControlPanal;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					ControlPanal window = new ControlPanal();
+					window.frmControlPanal.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public ControlPanal() {
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize() {
+		frmControlPanal = new JFrame();
+		frmControlPanal.setTitle("Control Panal");
+		frmControlPanal.setBounds(100, 100, 682, 486);
+		frmControlPanal.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		JMenuBar menuBar = new JMenuBar();
+		frmControlPanal.setJMenuBar(menuBar);
+		
+		JMenu mnFile = new JMenu("File");
+		menuBar.add(mnFile);
+		
+		JMenu mnEdit = new JMenu("Edit");
+		menuBar.add(mnEdit);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		frmControlPanal.getContentPane().add(scrollPane, BorderLayout.CENTER);
+		
+		JTextPane textPane = new JTextPane();
+		textPane.setBackground(Color.WHITE);
+		scrollPane.setViewportView(textPane);
+	}
+
+}

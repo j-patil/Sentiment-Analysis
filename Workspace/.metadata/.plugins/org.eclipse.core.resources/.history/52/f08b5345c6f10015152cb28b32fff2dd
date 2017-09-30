@@ -1,0 +1,46 @@
+package jdbc;
+
+import java.io.FileWriter;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+	 
+	class jdbcTest {
+	 
+	    private static final String url = "jdbc:mysql://localhost";
+	 
+	    private static final String user = "root";
+	 
+	    private static final String password = "";
+	 
+	    public static void main(String args[]) {
+	        try {
+	            Connection con = DriverManager.getConnection(url, user, password);
+	            PreparedStatement pst = con.prepareStatement("SELECT comment_content FROM `wp_comments` WHERE `comment_post_ID` = 504 ");  
+	            ResultSet res = pst.executeQuery();  
+	            res.next();                                           
+	                      
+	            Reader r1 = res.getCharacterStream(null);
+
+	            FileWriter fw = new FileWriter("/home/rutesh/workspace/product1.txt");  
+	                      
+	            int k;  
+	            while((k = r1.read()) != -1)  
+	            {
+	              fw.write((char)k);  
+	            }
+
+	            System.out.println("File is retrieved");                
+	            fw.close();  
+	            r1.close();
+	            res.close();
+	            pst.close();
+	            con.close();  
+	 
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	}

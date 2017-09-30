@@ -1,0 +1,122 @@
+package jdbc;
+
+import java.io.FileWriter;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+	 
+	class jdbcTest {
+	 
+	    private static final String url = "jdbc:mysql://localhost:3306/";
+	    private static final String user = "root";
+	    private static final String password = "";
+	 
+	    public static void main(String args[]) {
+	        try {
+	            Class.forName("com.mysql.jdbc.Driver").newInstance();
+	            Connection con = DriverManager.getConnection(url, user, password);
+	            Statement stt = con.createStatement();
+	            stt.execute("USE wordpress");
+	            PreparedStatement pst = con.prepareStatement("SELECT comment_content FROM `wp_comments` WHERE `comment_post_ID` = 504 ");  
+	            ResultSet res = pst.executeQuery();  
+	            res.next();                                           
+	                      
+	            Reader r1 = res.getCharacterStream(null);
+
+	            FileWriter fw = new FileWriter("/home/rutesh/workspace/product1.txt");  
+	                      
+	            int k;  
+	            while((k = r1.read()) != -1)  
+	            {
+	              fw.write((char)k);  
+	            }
+
+	            System.out.println("File is retrieved");                
+	            fw.close();  
+	            r1.close();
+	            res.close();
+	            pst.close();
+	            con.close();  
+	 
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	}
+           
+           try
+           {
+               Class.forName("com.mysql.jdbc.Driver").newInstance();
+               Connection con = DriverManager.getConnection(url, user, password);
+               
+               Statement stt = con.createStatement();
+               
+               /**
+                * Create and select a database for use. 
+                */
+               stt.execute("CREATE DATABASE IF NOT EXISTS test");
+               stt.execute("USE test");
+               
+               /**
+                * Create an example table
+                */
+               stt.execute("DROP TABLE IF EXISTS people");
+               stt.execute("CREATE TABLE people (" +
+                       "id BIGINT NOT NULL AUTO_INCREMENT,"
+                       + "fname VARCHAR(25),"
+                       + "lname VARCHAR(25),"
+                       + "PRIMARY KEY(id)"
+                       + ")");
+               
+               /**
+                * Add entries to the example table
+                */
+               stt.execute("INSERT INTO people (fname, lname) VALUES" + 
+                       "('Joe', 'Bloggs'), ('Mary', 'Bloggs'), ('Jill', 'Hill')");
+               
+               /**
+                * Query people entries with the lname 'Bloggs'
+                */
+               ResultSet res = stt.executeQuery("SELECT * FROM people WHERE lname = 'Bloggs'");
+               
+               /**
+                * Iterate over the result set from the above query
+                */
+               while (res.next())
+               {
+                   System.out.println(res.getString("fname") + " " + res.getString("lname"));
+               }
+               System.out.println("");
+               
+               /**
+                * Same as the last query, but using a prepared statement. 
+                * Prepared statements should be used when building query strings
+                * from user input as they protect against SQL injections
+                */
+               PreparedStatement prep = con.prepareStatement("SELECT * FROM people WHERE lname = ?");
+               prep.setString(1, "Bloggs");
+               
+               res = prep.executeQuery();
+               while (res.next())
+               {
+                   System.out.println(res.getString("fname") + " " + res.getString("lname"));
+               }
+               
+               /**
+                * Free all opened resources
+                */
+               res.close();
+               stt.close();
+               prep.close();
+               con.close();
+               
+           }
+           catch (Exception e)
+           {
+               e.printStackTrace();
+           }
+       }
+   }

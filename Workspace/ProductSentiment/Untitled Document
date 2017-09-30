@@ -1,0 +1,5 @@
+unset HADOOP_CLASSPATH
+export HADOOP_CLASSPATH=/home/rutesh/workspace/ProductSentiment/open_nlp/opennlp-tools-1.5.3.jar
+export LIBJARS=/home/rutesh/workspace/ProductSentiment/open_nlp/opennlp-tools-1.5.3.jar
+hadoop jar productsentiment.jar MapReduceOne /input/test23-03-16-1.txt /output/final22-03-16 -libjars $[LIBJARS]
+

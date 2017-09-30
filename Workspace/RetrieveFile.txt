@@ -1,0 +1,32 @@
+import java.io.*;  
+import java.sql.*;  
+  
+public class RetrieveFile 
+{  
+  public static void main(String[] args) throws Exception
+  { 
+    Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+    Connection con = DriverManager.getConnection("jdbc:odbc:         ", "scott", "tiger");
+              
+    PreparedStatement pst = con.prepareStatement(" SELECT comment_content FROM `wp_comments` WHERE `comment_post_ID` = 504 ");  
+    ResultSet res = pst.executeQuery();  
+    res.next();                                           
+              
+    Reader r1 = res.getCharacterStream(); 
+
+    FileWriter fw = new FileWriter("C:\\product1.txt");  
+              
+    int k;  
+    while((k = r1.read()) != -1)  
+    {
+      fw.write((char)k);  
+    }
+
+    System.out.println("File is retrieved");                
+    fw.close();  
+    r1.close();
+    res.close();
+    pst.close();
+    con.close();  
+  }  
+}  

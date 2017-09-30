@@ -1,0 +1,15 @@
+package jdbc;
+
+
+//import java.io.BufferedReader;
+import java.io.*;
+//import java.io.InputStreamReader;
+
+	public class ex {
+
+		public static void main(String[] args) throws IOException, InterruptedException {
+
+			ProcessBuilder proc = new ProcessBuilder("/home/rutesh/workspace/jdbc/Untitled.sh");
+			Process p = proc.start();
+		}
+	}

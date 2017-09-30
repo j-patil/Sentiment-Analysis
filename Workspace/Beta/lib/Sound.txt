@@ -1,0 +1,6 @@
+sound
+ringtone
+loudspeaker
+music
+earpiece
+jack

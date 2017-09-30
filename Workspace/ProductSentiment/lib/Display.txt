@@ -1,0 +1,6 @@
+display
+screen
+resolution
+multitouch
+color
+size

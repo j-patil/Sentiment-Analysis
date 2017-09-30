@@ -1,0 +1,7 @@
+memory
+internal
+external
+ram
+rom
+sd card
+card slot

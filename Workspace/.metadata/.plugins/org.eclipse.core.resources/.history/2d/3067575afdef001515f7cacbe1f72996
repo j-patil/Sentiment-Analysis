@@ -1,0 +1,227 @@
+package com.productsentiment;
+
+	import java.io.File;
+	import java.io.FileInputStream;
+	import java.io.IOException;
+	import java.io.InputStream;
+	import java.util.HashSet;
+	import java.util.Iterator;
+	import java.util.Scanner;
+	import java.util.StringTokenizer;
+
+	import org.apache.hadoop.conf.Configuration;
+	import org.apache.hadoop.fs.Path;
+	import org.apache.hadoop.io.Text;
+	import org.apache.hadoop.mapreduce.Job;
+	import org.apache.hadoop.mapreduce.Mapper;
+	import org.apache.hadoop.mapreduce.Reducer;
+	import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+	import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+	import org.apache.hadoop.util.GenericOptionsParser;
+
+	import opennlp.tools.postag.POSModel;
+	import opennlp.tools.postag.POSTaggerME;
+	import opennlp.tools.tokenize.WhitespaceTokenizer;
+
+	public class MapReduceOne {
+
+	public static class TokenizerMapper extends Mapper < Object, Text, Text, Text > {
+
+	  private Text OutputKey = new Text();
+	  private Text OutputValue = new Text();
+
+	  public void map(Object key, Text value, Context context) throws IOException,InterruptedException {
+	   Scanner sc;
+	   StringTokenizer itr = new StringTokenizer(value.toString());
+	   Boolean flag = false;
+
+	   HashSet < String > Camera = new HashSet < String > ();
+	   sc = new Scanner(new File("../lib/Camera.txt"));
+	   while (sc.hasNext()) {
+	    Camera.add(sc.next());
+	   }
+	   sc.close();
+
+	   HashSet < String > Display = new HashSet < String > ();
+	   sc = new Scanner(new File("../lib/Display.txt"));
+	   while (sc.hasNext()) {
+	    Display.add(sc.next());
+	   }
+	   sc.close();
+
+	   HashSet < String > Processor = new HashSet < String > ();
+	   sc = new Scanner(new File("../lib/Processor.txt"));
+	   while (sc.hasNext()) {
+	    Processor.add(sc.next());
+	   }
+	   sc.close();
+
+	   HashSet < String > Memory = new HashSet < String > ();
+	   sc = new Scanner(new File("../lib/Memory.txt"));
+	   while (sc.hasNext()) {
+	    Memory.add(sc.next());
+	   }
+	   sc.close();
+
+	   HashSet < String > Sound = new HashSet < String > ();
+	   sc = new Scanner(new File("../lib/Sound.txt"));
+	   while (sc.hasNext()) {
+	    Sound.add(sc.next());
+	   }
+	   sc.close();
+
+	   HashSet < String > Battery = new HashSet < String > ();
+	   sc = new Scanner(new File("../lib/Battery.txt"));
+	   while (sc.hasNext()) {
+	    Battery.add(sc.next());
+	   }
+	   sc.close();
+	   
+	   Iterator < String > c = Camera.iterator();
+	   Iterator < String > d = Display.iterator();
+	   Iterator < String > p = Processor.iterator();
+	   Iterator < String > m = Memory.iterator();
+	   Iterator < String > s = Sound.iterator();
+	   Iterator < String > b = Battery.iterator();
+	   
+	   while (itr.hasMoreTokens()) {
+	    String test = itr.nextToken();
+	    
+	    while (c.hasNext()) {
+	     if (c.next().equals(test)) {
+	      flag = true;
+	      OutputKey.set("Camera");
+	      OutputValue.set(value);
+	     }
+	    }
+	    c = Camera.iterator();
+	    if (flag)
+	     break;
+	    
+	    while (d.hasNext()) {
+	     if (d.next().equals(test)) {
+	      flag = true;
+	      OutputKey.set("Display");
+	      OutputValue.set(value);
+	     }
+	    }
+	    d = Display.iterator();
+	    if (flag)
+	     break;
+
+	    while (p.hasNext()) {
+	     if (p.next().equals(test)) {
+	      flag = true;
+	      OutputKey.set("Processor");
+	      OutputValue.set(value);
+	     }
+	    }
+	    p = Processor.iterator();
+	    if (flag)
+	     break;
+
+	    while (m.hasNext()) {
+	     if (m.next().equals(test)) {
+	      flag = true;
+	      OutputKey.set("Memory");
+	      OutputValue.set(value);
+	     }
+	    }
+	    m = Memory.iterator();
+	    if (flag)
+	     break;
+
+	    while (s.hasNext()) {
+	     if (s.next().equals(test)) {
+	      flag = true;
+	      OutputKey.set("Sound");
+	      OutputValue.set(value);
+	     }
+	    }
+	    s = Sound.iterator();
+	    if (flag)
+	        break;
+
+	       while (b.hasNext()) {
+	        if (b.next().equals(test)) {
+	         flag = true;
+	         OutputKey.set("Battery");
+	         OutputValue.set(value);
+	        }
+	       }
+	       b = Battery.iterator();
+	       if (flag)
+	    	     break;
+	   }
+	   if (flag)
+	    context.write(OutputKey, OutputValue);
+	  }
+	 }
+
+	public static class TokenizerReducer extends Reducer < Text, Text, Text, Text > {
+		 
+	  private Text result = new Text();
+	  public static String stringTag(String i) {
+	   String op = "";
+	   InputStream modelIn = null;
+	   POSModel model = null;
+	   try {
+	    modelIn = new FileInputStream("../open_nlp/en-pos-maxent.bin");
+	    model = new POSModel(modelIn);
+	   } catch (IOException e) {
+	    e.printStackTrace();
+	   } finally {
+	    if (modelIn != null) {
+	     try {
+	      modelIn.close();
+	     } catch (IOException e) {
+	    	 e.printStackTrace();
+	     }
+	    }
+	   }
+	   POSTaggerME tagger = new POSTaggerME(model);
+	   String[] sent = WhitespaceTokenizer.INSTANCE.tokenize(i);
+	   String[] tags = tagger.tag(sent);
+	   for (int j = 0; j < sent.length; j++) {
+	    op += tags[j] + "," + sent[j] + " ";
+	   }
+	   return op;
+	  }
+
+	  public void reduce(Text key, Iterable < Text > values, Context context) throws IOException,InterruptedException {
+	   
+	   String value, sentence, set = "";
+
+	   for (Text val: values) {
+	    value = val.toString();
+	    sentence = stringTag(value);
+	    set += sentence;
+	   }
+	   result.set(set);
+	   context.write(key,result);
+	  }
+	 }
+
+	public static void main(String args[]) {
+	   try {
+	    Configuration conf = new Configuration();
+	    String otherArgs[] = new GenericOptionsParser(conf, args).getRemainingArgs();
+	    Job job = Job.getInstance(conf,"buckets");
+	    job.setJarByClass(MapReduceOne.class);
+	    job.setMapperClass(TokenizerMapper.class);
+	    job.setReducerClass(TokenizerReducer.class);
+	    job.setOutputKeyClass(Text.class);
+	    job.setOutputValueClass(Text.class);
+	    FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
+	    FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+	    System.exit(job.waitForCompletion(true) ? 0 : 1);
+	   } catch (IOException e) {
+	    System.out.print(e);
+	   } catch (InterruptedException e) {
+	    System.out.print(e);
+	   } catch (ClassNotFoundException e) {
+	    System.out.print(e);
+	   }
+	  }
+	
+	}

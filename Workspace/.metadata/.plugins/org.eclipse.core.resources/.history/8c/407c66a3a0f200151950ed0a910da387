@@ -1,0 +1,141 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import opennlp.tools.sentdetect.SentenceDetectorME;
+import opennlp.tools.sentdetect.SentenceModel;
+
+public class StopWordsRemover {
+
+	public static class KeyMapper extends Mapper<Text,Text,Text,Text> {
+        
+		private Text OutputKey = new Text();
+		private Text OutputValue = new Text();
+		
+		public static String[] sentenceDetect (String input) throws IOException {
+			InputStream modelIn = new FileInputStream("/home/rutesh/workspace/Beta/lib/en-sent.bin");
+			SentenceModel model = new SentenceModel(modelIn);
+			if (modelIn != null)  
+				modelIn.close(); 
+			
+			SentenceDetectorME sentenceDetector = new SentenceDetectorME(model);
+	        String sentences[] = sentenceDetector.sentDetect(input);
+	        return sentences;
+		}
+
+		public static String checker (String i) throws IOException {
+		    
+			ArrayList<String> phrasein = new ArrayList<String>();
+			ArrayList<String> phraseout = new ArrayList<String>();
+			ArrayList<String> wordsList = new ArrayList<String>();
+		    Set<String> stopWordsSet = new HashSet<String>();
+			Scanner in,out;
+			String alpha = i.trim().replaceAll("[^a-zA-Z0-9\\s]", "").replaceAll("\\s+", " ");
+			in = new Scanner(new File("/home/rutesh/workspace/Beta/lib/phrase.txt"));
+			out = new Scanner(new File("/home/rutesh/workspace/Beta/lib/phraseout.txt"));
+			String store = "";
+        	while (in.hasNextLine()) {
+        	  phrasein.add(in.nextLine());
+        	}
+        	in.close();
+        	
+        	while (out.hasNextLine()) {
+        	  phraseout.add(out.nextLine());
+        	}
+        	out.close();
+        	
+        	String[] arrin = phrasein.toArray(new String[0]);
+        	String[] arrout = phraseout.toArray(new String[0]);
+        	
+        	String beta = null;
+        	for(int k=0;k<arrin.length;k++){
+        		beta = alpha.replaceAll(arrin[k],arrout[k]);
+        	    alpha=beta;
+        	}
+    	    
+			String[] words = beta.split(" ");
+	    	
+		    for(String word : words) {
+		    String wordCompare = word.toLowerCase();
+		    if(!stopWordsSet.contains(wordCompare))
+		    wordsList.add(word);
+		    }
+		    
+		    for (String str : wordsList) {
+		    	store += str+" ";
+		    }	
+		    String t = store.trim().toLowerCase();
+		    store = " ";
+		    wordsList.clear();
+		    return t;
+        }
+		
+		public void map(Text key, Text values, Context context) throws IOException, InterruptedException {	
+			String val = "";
+			String sentence[];
+			val = values.toString();
+			sentence = sentenceDetect(val);
+			for (String s : sentence) {
+				s = checker(s);
+				OutputKey.set(key);
+				OutputValue.set(s);
+				context.write(OutputKey, OutputValue);
+			}
+		}
+	}
+
+	public static class KeyReducer extends Reducer<Text,Text,Text,Text>
+    {
+        private Text result = new Text();
+        public void reduce(Text key, Iterable<Text> values,Context context) throws IOException, InterruptedException
+        {
+            String translations = "";
+            for (Text val : values)
+            translations += val.toString()+" ";
+            translations = translations.trim();
+            result.set(translations);
+            context.write(key, result);
+        }
+    }
+	
+	public static void main(String[] args) {
+    	try {
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf,"Task 2");
+        job.setJarByClass(StopWordsRemover.class);
+        job.setMapperClass(KeyMapper.class);
+        job.setReducerClass(KeyReducer.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+        job.setInputFormatClass(KeyValueTextInputFormat.class);
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    	}
+    	catch (IOException e) {
+    		System.out.print(e);
+    	}
+    	catch (InterruptedException e) {
+    		System.out.print(e);
+    	}
+    	catch (ClassNotFoundException e) {
+    		System.out.print(e);
+    	}
+    	}
+
+}
